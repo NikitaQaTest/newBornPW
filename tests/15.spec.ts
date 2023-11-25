@@ -3,6 +3,7 @@ import { ApiHelper } from "../helpers/apiHelper";
 import { Response } from '@playwright/test';
 
 let token: string;
+let categoryId: string;
 
 test.beforeAll(async () => {
   token = await ApiHelper.getToken({
@@ -15,62 +16,52 @@ test.beforeEach(async ({page}) => {
   page.addInitScript((value) => {
     window.localStorage.setItem("auth-token", value);
   }, token);
-  // await page.routeFromHAR('hars/categories.har', {
-  //   url: '/api/category',
-  //   //update: true
-  // });
   await page.goto("/overview");
-  // await expect(page).toHaveScreenshot('overview.png');
-  // const firstCard = page.locator('.card-content').first();
-  // await expect(firstCard).toHaveScreenshot('first_card.png');
-  await page.context().storageState({ path: "auth.json" });
 });
 
+  test("Create a category with positions", async ({page}) => {
+    const categoriesMenuItem = page
+      .getByRole("listitem")
+      .filter({ hasText: "Асортимент" });
+    const categoriesListElements = page
+      .locator("app-categories-page")
+      .getByRole("link");
+    const addCategoryBtn = page.getByText("Додати категорію");
+    const categoryName = page.locator("#name");
+    await categoriesMenuItem.click();
+    await page.waitForLoadState('networkidle');
+    await addCategoryBtn.click();
+    await categoryName.fill("PW Test category");
+    const fileChooserPromise = page.waitForEvent("filechooser");
+    await page.getByText("Завантажити зображення").click();
+    const fileChooser = await fileChooserPromise;
+    // expect(fileChooser.isMultiple()).toBeFalsy;
+    await fileChooser.setFiles("image.jpg");
+    // Interception
+    const responsePromise = page.waitForResponse('/api/category');
+    await page.getByText("Зберегти зміни").click();
+    const response = await responsePromise;
+    const parsed = await response.json();
+    categoryId = parsed._id;
+  
+  
+    await page.waitForLoadState('networkidle');
+    const data = {
+      name: "position1",
+      cost: 100,
+      category: categoryId
+    };
+    const response1 = await ApiHelper.createPosition(token, data);
+    console.log(response1);
 
-
-
-
-test('Create category and positions', async ({ page }) => {
-    // Дождитесь события запроса с именем 'createCategory'
-    const response = await page.waitForResponse('@createCategory');
-  
-    const responseBody = await response.json();
-    const categoryId = responseBody._id;
-    console.log(`ID созданной категории: ${categoryId}`);
-  
-    // Функция для создания позиции
-    async function createPosition(name: string, cost: number) {
-      const payload = {
-        category: categoryId,
-        name: name,
-        cost: cost,
-      };
-  
-      // Добавьте токен авторизации в заголовки запроса
-      const data = {
-        email: 'test1@gmail.com',
-        password: '12345Qq',
-      };
-      const authToken = await ApiHelper.getToken(data);
-  
-      const response = await page.evaluate((payload, authToken) => {
-        return fetch('http://5.189.186.217/api/position', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-      }, payload, authToken);
-  
-      // Вы можете добавить здесь дополнительные проверки, если это необходимо
-    }
-  
-    // Создайте позиции в категории
-    await createPosition("Позиция 1", 1000);
-    await createPosition("Позиция 2", 1500);
+    // //добавить заказ
+    // await page.getByRole('link', { name: 'Додати замовлення' }).click();
+    // await page.locator('app-order-categories div').nth(3).click();
+    // await page.getByRole('button', { name: 'Додати' }).click();
+    // await page.getByRole('button', { name: 'Додати' }).click();
+    // await page.getByRole('button', { name: 'Завершити' }).click();
+    // await page.getByRole('button', { name: 'Підтвердити' }).click();
   });
-  
-  // ...
+
+
   

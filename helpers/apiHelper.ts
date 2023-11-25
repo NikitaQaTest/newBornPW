@@ -33,4 +33,18 @@ export class ApiHelper {
     const serializedRespone = await response.json();
     return serializedRespone;
   }
+  static async createPosition(token: string, data: object): Promise<object> {
+    const context = await this.context();
+    const response = await context.post("api/position", {
+      data,
+      headers: {
+        Authorization: token,
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    const serializedRespone = await response.json();
+    return serializedRespone;
+  }
 }
+
+

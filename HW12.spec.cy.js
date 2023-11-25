@@ -1,6 +1,7 @@
 import { ApiHelper } from "../support/apiHelper";
 import { DbHelper } from "../support/dbHelper";
 
+
 describe("First suite", () => {
   let apiCategories; // Объявляем переменные на уровне describe для области видимости
   
