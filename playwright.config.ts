@@ -1,9 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 
+
 dotenv.config({
   path: `./env/.env`
 })
+
+
+
+
 
 /**
  * Read environment variables from file.
@@ -15,6 +20,7 @@ dotenv.config({
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+  timeout: 5 * 60 * 1000,
   testDir: "./tests",
   /* Run tests in files in parallel */
   fullyParallel: true,

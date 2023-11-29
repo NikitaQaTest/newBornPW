@@ -4,6 +4,10 @@ import { Response } from '@playwright/test';
 
 let token: string;
 let categoryId: string;
+let order: string;
+
+
+
 
 test.beforeAll(async () => {
   token = await ApiHelper.getToken({
@@ -19,7 +23,7 @@ test.beforeEach(async ({page}) => {
   await page.goto("/overview");
 });
 
-  test("Create a category with positions", async ({page}) => {
+  test("CRUD category", async ({page}) => {
     const categoriesMenuItem = page
       .getByRole("listitem")
       .filter({ hasText: "Асортимент" });
@@ -48,20 +52,51 @@ test.beforeEach(async ({page}) => {
     await page.waitForLoadState('networkidle');
     const data = {
       name: "position1",
-      cost: 100,
+      cost: 10,
       category: categoryId
     };
     const response1 = await ApiHelper.createPosition(token, data);
     console.log(response1);
 
-    // //добавить заказ
-    // await page.getByRole('link', { name: 'Додати замовлення' }).click();
-    // await page.locator('app-order-categories div').nth(3).click();
-    // await page.getByRole('button', { name: 'Додати' }).click();
-    // await page.getByRole('button', { name: 'Додати' }).click();
-    // await page.getByRole('button', { name: 'Завершити' }).click();
-    // await page.getByRole('button', { name: 'Підтвердити' }).click();
+    // добавить заказ
+    await page.getByRole('link', { name: 'Додати замовлення' }).click();
+    await page.getByRole('heading', { name: 'PW Test category' }).click();
+    await page.getByRole('button', { name: 'Додати' }).click();
+    await page.getByRole('button', { name: 'Завершити' }).click();
+    await page.getByRole('button', { name: 'Підтвердити' }).click();
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await page.getByRole('button', { name: 'Історія' }).click();
+
+    // order 
+    const responsePromise2 = page.waitForResponse('/api/order');
+    await page.getByText("Історія").click();
+    const response2 = await responsePromise;
+    const parsed2 = await response.json();
+    order = parsed2._id;
+    console.log(order);
+
+
+    //filter
+    await page.getByRole('link', { name: 'Історія' }).click();
+    await page.getByRole('button', { name: 'filter_list' }).click();
+    await page.getByText('Номер замовлення').click();
+    await page.getByLabel('Номер замовлення').fill(order);
+    await page.getByRole('button', { name: 'Применить фильтр' }).click();
+    
+
+    //delCategori
+    await page.getByRole('link', { name: 'Асортимент' }).click();
+    await page.getByRole('link', { name: 'PW Test category' }).click();
+    page.once('dialog', dialog => {
+      console.log(`Dialog message: ${dialog.message()}`);
+      dialog.dismiss().catch(() => {});
+    });
+    await page.getByRole('button', { name: 'delete' }).click();
+
+
   });
+
+  
 
 
   
